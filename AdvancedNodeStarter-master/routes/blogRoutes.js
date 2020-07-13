@@ -14,26 +14,8 @@ module.exports = (app) => {
   });
 
   app.get("/api/blogs", requireLogin, async (req, res) => {
-    //how not to hit mdb every time
-    const redis = require("redis");
-    const redisUrl = "redis://127.0.0.1:6379";
-    const client = redis.createClient(redisUrl);
-    const util = require("util");
-    client.get = util.promisify(client.get); //instead of callback returns a promise
-
-    //do we have cache data in redis?
-    const cachedBlogs = await client.get(req.user.id);
-
-    //if yes ==> return data
-    if (cachedBlogs) {
-      console.log("serving from Redis");
-      return res.send(JSON.parse(cachedBlogs));
-    }
-    //if no ==> query and update redis
     const blogs = await Blog.find({ _user: req.user.id });
-    console.log("serving from Mongo");
     res.send(blogs);
-    client.set(req.user.id, JSON.stringify(blogs));
   });
 
   app.post("/api/blogs", requireLogin, async (req, res) => {
